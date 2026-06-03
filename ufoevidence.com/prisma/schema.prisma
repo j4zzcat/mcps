@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model CachedCase {
+  id                   String              @id @default(cuid())
+  caseId               String              @unique @map("case_id")
+  title                String
+  url                  String              @unique
+  subtitle             String?
+  summary              String?
+  keyQuote             String?             @map("key_quote")
+  date                 String?
+  year                 Int?
+  country              String?
+  state                String?
+  city                 String?
+  latitude             Float?
+  longitude            Float?
+  status               String?
+  witnessType          String?             @map("witness_type")
+  witnessCount         String?             @map("witness_count")
+  caseScore            Float?              @map("case_score")
+  witnessQualityScore  Float?              @map("witness_quality_score")
+  evidenceQualityScore Float?              @map("evidence_quality_score")
+  pageHash             String              @map("page_hash")
+  parsedHash           String              @map("parsed_hash")
+  documentSetHash      String?             @map("document_set_hash")
+  spreadsheetRevision  String?             @map("spreadsheet_revision")
+  rawJson              Json                @map("raw_json")
+  scoresJson           Json?               @map("scores_json")
+  effectsJson          Json?               @map("effects_json")
+  rawSectionsJson      Json?               @map("raw_sections_json")
+  sourceRetrievedAt    DateTime            @map("source_retrieved_at")
+  lastCheckedAt        DateTime            @default(now()) @map("last_checked_at")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  categories           CaseCategory[]
+  tags                 CaseTag[]
+  documents            CaseDocument[]
+  sources              CaseSource[]
+  investigations       CaseInvestigation[]
+  effects              CaseEffect[]
+
+  @@map("cached_cases")
+}
+
+model CaseCategory {
+  id        String     @id @default(cuid())
+  caseId    String     @map("case_id")
+  name      String
+  case      CachedCase @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@unique([caseId, name])
+  @@map("case_categories")
+}
+
+model CaseTag {
+  id        String     @id @default(cuid())
+  caseId    String     @map("case_id")
+  name      String
+  case      CachedCase @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@unique([caseId, name])
+  @@map("case_tags")
+}
+
+model CaseDocument {
+  id            String     @id @default(cuid())
+  caseId        String     @map("case_id")
+  title         String
+  url           String
+  finalUrl      String?    @map("final_url")
+  type          String?
+  description   String?
+  revision      String?
+  etag          String?
+  lastModified  String?    @map("last_modified")
+  contentType   String?    @map("content_type")
+  contentLength Int?       @map("content_length")
+  contentHash   String?    @map("content_hash")
+  content       Bytes?
+  retrievedAt   DateTime?  @map("retrieved_at")
+  downloadedAt  DateTime?  @map("downloaded_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  case          CachedCase @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+
+  @@unique([caseId, url])
+  @@map("case_documents")
+}
+
+model CaseSource {
+  id           String     @id @default(cuid())
+  caseId       String     @map("case_id")
+  sourceId     String?    @map("source_id")
+  title        String?
+  organization String?
+  author       String?
+  year         String?
+  type         String?
+  scope        String?
+  findings     String?
+  url          String?
+  rawText      String?    @map("raw_text")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  case         CachedCase @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+
+  @@map("case_sources")
+}
+
+model CaseInvestigation {
+  id           String     @id @default(cuid())
+  caseId       String     @map("case_id")
+  title        String?
+  organization String?
+  findings     String?
+  url          String?
+  rawText      String?    @map("raw_text")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  case         CachedCase @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+
+  @@map("case_investigations")
+}
+
+model CaseEffect {
+  id             String          @id @default(cuid())
+  caseId         String          @map("case_id")
+  effectId       String?         @map("effect_id")
+  effectName     String          @map("effect_name")
+  effectCategory String?         @map("effect_category")
+  present        Boolean?
+  score          Float?
+  rawJson        Json            @map("raw_json")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  case           CachedCase      @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+  subEffects     CaseSubEffect[]
+
+  @@map("case_effects")
+}
+
+model CaseSubEffect {
+  id                      String     @id @default(cuid())
+  effectRowId             String     @map("effect_row_id")
+  subEffectId             String?    @map("sub_effect_id")
+  name                    String
+  findings                String?
+  witnessQuantity         Float?     @map("witness_quantity")
+  eventConditions         Float?     @map("event_conditions")
+  credibilityReliability  Float?     @map("credibility_reliability")
+  witnessRationale        String?    @map("witness_rationale")
+  dataSensors             Float?     @map("data_sensors")
+  visualRecords           Float?     @map("visual_records")
+  publishedReports        Float?     @map("published_reports")
+  evidenceRationale       String?    @map("evidence_rationale")
+  probativeFactor         Float?     @map("probative_factor")
+  sourcesJson             Json?      @map("sources_json")
+  caveatsJson             Json?      @map("caveats_json")
+  rawJson                 Json       @map("raw_json")
+  createdAt               DateTime   @default(now()) @map("created_at")
+  effect                  CaseEffect @relation(fields: [effectRowId], references: [id], onDelete: Cascade)
+
+  @@map("case_sub_effects")
+}
